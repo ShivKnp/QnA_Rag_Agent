@@ -59,7 +59,7 @@ if file is not None:
     )
 
     # User Input
-    user_question = st.text_input(" Summarise the document ")
+    user_question = st.text_input("Type your question here")
 
     if user_question:
         response = qa_chain({"query": user_question})
