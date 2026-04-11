@@ -67,8 +67,8 @@ if file is not None:
         st.subheader("Answer:")
         st.write(response["result"])
 
-        # Optional: show sources
-        with st.expander("📚 Source Chunks"):
+        # showing sources
+        with st.expander("Source Chunks"):
             for doc in response["source_documents"]:
                 st.write(doc.page_content[:500])
                 st.write("---")
