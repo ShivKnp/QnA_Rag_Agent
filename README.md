@@ -1,6 +1,6 @@
 # 🤖 MyChatBot
 
-MyChatBot is a Streamlit-based AI chatbot that allows users to upload a PDF and ask questions about its content using LangChain and OpenAI.
+MyChatBot is a Streamlit-based AI chatbot that allows users to upload a PDF and ask questions about its content using LangChain and Gemini.
 
 ## ✨ Features
 - Upload and read PDF files
@@ -12,7 +12,7 @@ MyChatBot is a Streamlit-based AI chatbot that allows users to upload a PDF and 
 - Python
 - Streamlit
 - LangChain
-- OpenAI
+- Gemini
 - FAISS
 
 ## 🚀 Setup Instructions
