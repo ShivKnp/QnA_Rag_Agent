@@ -1,6 +1,6 @@
-# 🤖 MyChatBot
+# QnA RAG System
 
-MyChatBot is a Streamlit-based AI chatbot that allows users to upload a PDF and ask questions about its content using LangChain and Gemini.
+QnA RAG System is a Streamlit-based AI chatbot that allows users to upload a PDF and ask questions about its content using LangChain and Gemini.
 
 ## ✨ Features
 - Upload and read PDF files
@@ -12,5 +12,5 @@ MyChatBot is a Streamlit-based AI chatbot that allows users to upload a PDF and 
 - Python
 - Streamlit
 - LangChain
-- Gemini
+- Gemini(LLM, Vector Embedding Model)
 - FAISS
