@@ -7,7 +7,7 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 
 # Load API key securely
-GOOGLE_API_KEY = "AIzaSyA8Lr5QvJ-Mh_ljhC9KbRAqUAr-_GA0zSU"
+GOOGLE_API_KEY ="AIzaSyCFGFRR4XnqhLt7CZexu1CD2NLRIxgMf8w"
 
 st.header("📄 Chat with your PDF (Gemini Powered)")
 
@@ -33,7 +33,7 @@ if file is not None:
 
     # Embeddings (Gemini)
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
+        model="gemini-embedding-001",
         google_api_key=GOOGLE_API_KEY
     )
 
