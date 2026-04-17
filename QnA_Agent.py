@@ -7,9 +7,14 @@ from langchain_community.vectorstores import FAISS
 from langchain_classic.chains import RetrievalQA
 
 # Load API key securely
-GOOGLE_API_KEY ="AIzaSyAxzP4SQO9CQhxdykrPs8RXVF6hKgvOdIk"
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 st.header("Chat with your PDF (Gemini✨)")
+
+if not GOOGLE_API_KEY:
+    st.error("Missing GOOGLE_API_KEY")
+    st.stop()
+
 # Sidebar
 with st.sidebar:
     st.title("Upload Document")
