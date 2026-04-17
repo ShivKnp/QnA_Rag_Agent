@@ -30,8 +30,8 @@ if file is not None:
     # Split into chunks
     text_splitter = RecursiveCharacterTextSplitter(
         separators="\n",
-        chunk_size=1000,
-        chunk_overlap=150
+        chunk_size=1500,
+        chunk_overlap=100
     )
     chunks = text_splitter.split_text(text)
 
@@ -41,8 +41,15 @@ if file is not None:
         google_api_key=GOOGLE_API_KEY
     )
 
-    # Vector Store
-    vector_store = FAISS.from_texts(chunks, embeddings)
+    # Vector Store -> Each Chunk = 1 API Call inefficient replacing it with streamlit caching
+    # vector_store = FAISS.from_texts(chunks, embeddings)
+    @st.cache_resource
+    def create_vector_store(chunks, api_key):
+        embeddings = GoogleGenerativeAIEmbeddings(
+            model="gemini-embedding-001",
+            google_api_key=api_key
+        )
+        return FAISS.from_texts(chunks, embeddings)
 
     # Convert to retriever
     retriever = vector_store.as_retriever(search_kwargs={"k": 3})
