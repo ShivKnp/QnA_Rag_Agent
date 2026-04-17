@@ -10,7 +10,7 @@ from langchain_classic.chains import RetrievalQA
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Gemini PDF Q&A", layout="wide")
-st.header("📄 Chat with your PDF (Gemini RAG ⚡)")
+st.header("Chat with your PDF (Gemini✨)")
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
@@ -48,7 +48,7 @@ def split_text(text):
 @st.cache_resource
 def load_embeddings(api_key):
     return GoogleGenerativeAIEmbeddings(
-        model="gemini-embedding-001",
+        model="gemini-embedding-001", # Can be replaced with sentence transformers(hugging face) to prevent rate limiting of gemini api
         google_api_key=api_key
     )
 
@@ -114,7 +114,7 @@ if file is not None:
 
         st.session_state.current_file = file_hash
 
-        with st.spinner("Processing PDF (first time only)... ⏳"):
+        with st.spinner("Processing PDF"):
             text = extract_text(file)
             chunks = split_text(text)
 
@@ -129,7 +129,7 @@ if file is not None:
             st.session_state.vector_store = vector_store
 
     retriever = st.session_state.vector_store.as_retriever(
-        search_kwargs={"k": 3}
+        search_kwargs={"k": 10}
     )
 
     llm = load_llm(GOOGLE_API_KEY)
@@ -144,7 +144,7 @@ if file is not None:
     query = st.text_input("Ask something about your PDF:")
 
     if query:
-        with st.spinner("Thinking... 🤔"):
+        with st.spinner("Thinking..."):
             response = qa_chain({"query": query})
 
         st.subheader("Answer:")
