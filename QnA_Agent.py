@@ -1,15 +1,16 @@
 import os
 import streamlit as st
+import hashlib
+import time
 from PyPDF2 import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain_classic.chains import RetrievalQA
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="PDF Q&A (RAG)", layout="wide")
-st.header("📄 Chat with your PDF (Optimized RAG 🚀)")
+st.set_page_config(page_title="Gemini PDF Q&A", layout="wide")
+st.header("📄 Chat with your PDF (Gemini RAG ⚡)")
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
@@ -22,7 +23,11 @@ with st.sidebar:
     st.title("Upload Document")
     file = st.file_uploader("Upload a PDF", type="pdf")
 
-# ---------------- FUNCTIONS ----------------
+# ---------------- HELPERS ----------------
+
+def get_file_hash(file):
+    return hashlib.md5(file.getvalue()).hexdigest()
+
 
 def extract_text(file):
     pdf_reader = PdfReader(file)
@@ -33,32 +38,61 @@ def extract_text(file):
 
 
 def split_text(text):
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1500,     # reduced chunks
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1500,
         chunk_overlap=100
     )
-    return text_splitter.split_text(text)
+    return splitter.split_text(text)
 
 
 @st.cache_resource
-def load_embeddings():
-    # FREE local embeddings (no API cost 🚀)
-    return HuggingFaceEmbeddings(
-        model_name="all-MiniLM-L6-v2"
+def load_embeddings(api_key):
+    return GoogleGenerativeAIEmbeddings(
+        model="gemini-embedding-001",
+        google_api_key=api_key
     )
 
 
-def create_or_load_vectorstore(chunks, embeddings):
-    if os.path.exists("faiss_index"):
+def create_vectorstore_with_retry(chunks, embeddings):
+    """Handles rate limit by batching"""
+    batch_size = 20
+    all_docs = []
+
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i+batch_size]
+
+        for attempt in range(3):
+            try:
+                vs = FAISS.from_texts(batch, embeddings)
+                all_docs.append(vs)
+                break
+            except Exception as e:
+                if "429" in str(e):
+                    time.sleep(10)  # wait for quota reset
+                else:
+                    raise e
+
+    # Merge all FAISS indexes
+    base = all_docs[0]
+    for vs in all_docs[1:]:
+        base.merge_from(vs)
+
+    return base
+
+
+def load_or_create_faiss(file_hash, chunks, embeddings):
+    path = f"faiss_{file_hash}"
+
+    if os.path.exists(path):
         return FAISS.load_local(
-            "faiss_index",
+            path,
             embeddings,
             allow_dangerous_deserialization=True
         )
-    else:
-        vector_store = FAISS.from_texts(chunks, embeddings)
-        vector_store.save_local("faiss_index")
-        return vector_store
+
+    vector_store = create_vectorstore_with_retry(chunks, embeddings)
+    vector_store.save_local(path)
+    return vector_store
 
 
 @st.cache_resource
@@ -69,32 +103,37 @@ def load_llm(api_key):
         temperature=0
     )
 
-# ---------------- MAIN LOGIC ----------------
+# ---------------- MAIN ----------------
 
 if file is not None:
 
-    # Extract text
-    text = extract_text(file)
+    file_hash = get_file_hash(file)
 
-    # Split text
-    chunks = split_text(text)
+    # Avoid recomputation
+    if "current_file" not in st.session_state or st.session_state.current_file != file_hash:
 
-    # Load embeddings
-    embeddings = load_embeddings()
+        st.session_state.current_file = file_hash
 
-    # Create or load FAISS
-    vector_store = create_or_load_vectorstore(chunks, embeddings)
+        with st.spinner("Processing PDF (first time only)... ⏳"):
+            text = extract_text(file)
+            chunks = split_text(text)
 
-    # Store in session to avoid rerun recompute
-    if "vector_store" not in st.session_state:
-        st.session_state.vector_store = vector_store
+            embeddings = load_embeddings(GOOGLE_API_KEY)
 
-    retriever = st.session_state.vector_store.as_retriever(search_kwargs={"k": 3})
+            vector_store = load_or_create_faiss(
+                file_hash,
+                chunks,
+                embeddings
+            )
 
-    # Load LLM
+            st.session_state.vector_store = vector_store
+
+    retriever = st.session_state.vector_store.as_retriever(
+        search_kwargs={"k": 3}
+    )
+
     llm = load_llm(GOOGLE_API_KEY)
 
-    # QA Chain
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
@@ -102,18 +141,16 @@ if file is not None:
         return_source_documents=True
     )
 
-    # User Input
-    user_question = st.text_input("Ask a question from your PDF:")
+    query = st.text_input("Ask something about your PDF:")
 
-    if user_question:
+    if query:
         with st.spinner("Thinking... 🤔"):
-            response = qa_chain({"query": user_question})
+            response = qa_chain({"query": query})
 
         st.subheader("Answer:")
         st.write(response["result"])
 
-        # Sources
-        with st.expander("📚 Source Chunks"):
+        with st.expander("📚 Sources"):
             for doc in response["source_documents"]:
                 st.write(doc.page_content[:500])
                 st.write("---")
