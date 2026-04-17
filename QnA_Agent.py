@@ -4,13 +4,12 @@ from PyPDF2 import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
-from langchain.chains import RetrievalQA
+from langchain_classic.chains import RetrievalQA
 
 # Load API key securely
-GOOGLE_API_KEY ="AIzaSyCFGFRR4XnqhLt7CZexu1CD2NLRIxgMf8w"
+GOOGLE_API_KEY ="AIzaSyAxzP4SQO9CQhxdykrPs8RXVF6hKgvOdIk"
 
-st.header("📄 Chat with your PDF (Gemini Powered)")
-
+st.header("Chat with your PDF (Gemini✨)")
 # Sidebar
 with st.sidebar:
     st.title("Upload Document")
