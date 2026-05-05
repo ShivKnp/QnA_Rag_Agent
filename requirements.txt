@@ -1,7 +1,9 @@
 streamlit
 PyPDF2
+python-dotenv
 langchain-text-splitters
 langchain-google-genai
 langchain-community
 langchain-classic
 faiss-cpu
+langsmith[claude-agent-sdk]
